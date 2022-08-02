@@ -11,10 +11,18 @@ import {
 } from "@chakra-ui/react";
 import { NextPage } from "next";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useRouter } from "next/router";
+import { useAuthUserContext } from "@/lib/AuthUser";
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  getAuth,
+  UserCredential,
+} from "firebase/auth";
 
 interface IFromInput {
   email: string;
@@ -34,7 +42,8 @@ const schema = yup.object({
 });
 
 const Register: NextPage = () => {
-  const [serverError, setServerError] = useState<boolean>(false);
+  const auth: Auth = getAuth();
+  const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -42,11 +51,32 @@ const Register: NextPage = () => {
   } = useForm<IFromInput>({
     resolver: yupResolver(schema),
   });
+  const { user, login } = useAuthUserContext();
+  const router = useRouter();
 
   const onSubmit: SubmitHandler<IFromInput> = async (data) => {
-    setServerError(false);
-    console.log(data);
+    setServerError(null);
+    try {
+      const userCredential: UserCredential =
+        await createUserWithEmailAndPassword(
+          auth,
+          data.email.trim(),
+          data["new-password"].trim()
+        );
+      login(userCredential.user, () => {
+        router.push("/");
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        setServerError(error.message);
+      }
+    }
   };
+
+  if (user) {
+    router.push("/");
+    return <></>;
+  }
 
   return (
     <div>

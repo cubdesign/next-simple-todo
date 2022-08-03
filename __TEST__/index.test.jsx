@@ -24,6 +24,21 @@ jest.mock("@/lib/AuthUser", () => {
   };
 });
 
+jest.mock("firebase/firestore", () => {
+  return {
+    getFirestore: jest.fn(),
+    orderBy: jest.fn(),
+    where: jest.fn(),
+    query: jest.fn(),
+    collection: jest.fn(),
+    getDocs: jest.fn(() => {
+      return {
+        forEach: jest.fn(),
+      };
+    }),
+  };
+});
+
 describe("Home", () => {
   it("renders a heading", () => {
     render(<Todos />);
